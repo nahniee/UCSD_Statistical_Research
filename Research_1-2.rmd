@@ -63,7 +63,7 @@ This cuts computation time nearly in half without sacrificing accuracy.
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 ```
 
-```{r prior, echo=FALSE}
+```{r prior, echo=TRUE}
 # Road to needed package
 library(coda)
 
@@ -116,7 +116,8 @@ while (flag) {
   while (current_width > target_width) {
     current_failures <- current_failures + 1
     # Calculate HPD interval
-    hpd_result <- calculate_hpd_interval(current_successes, current_failures, prior_shape1, prior_shape2, alpha)
+    hpd_result <- calculate_hpd_interval(current_successes, current_failures, 
+                                          prior_shape1, prior_shape2, alpha)
     # Update current width
     current_width <- hpd_result$right_endpoint - hpd_result$left_endpoint
   }
@@ -152,12 +153,12 @@ print(paste("The largest required sample size is:", max_sample_size, "\n"))
 
 ## 3. Results and Plot Analysis
 
-The algorithm successfully computed the **decision boundary**. The **maximum number of trials** required before stopping at any point on this boundary was found to be 4146. 
+The algorithm successfully computed the **decision boundary**. The **maximum number of trials** required before stopping at any point on this boundary was found to be `r max_sample_size`. 
 
 The results are visualized in the two plots below.
 
 ### Plot 1: Decision Boundary
-```{r plotting, echo=FALSE}
+```{r plotting, echo=TRUE}
 # Plot the decision boundary
 plot(boundary_successes, boundary_failures,
      pch = 16, # Filled circle
@@ -172,7 +173,7 @@ plot(boundary_successes, boundary_failures,
 Each black dot represents a $(\text{Success}, \text{Failure})$ pair at which the trial stops. The elliptical shape is symmetric and peaks where $\hat{p} \approx 0.5$, indicating the point of maximum uncertainty. Trials far from this peak stop quickly due to stronger evidence.
 
 ### Plot 2: Boundary Points vs. Probability Estimate
-```{r prob_estimate, echo=FALSE}
+```{r prob_estimate, echo=TRUE}
 # Calculate probability estimates
 temp_successes <- boundary_successes / (boundary_successes + boundary_failures)
 plot(temp_successes, boundary_successes,

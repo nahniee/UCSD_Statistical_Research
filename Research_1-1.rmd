@@ -44,7 +44,7 @@ The following R code defines the `calculate_hpd` function which encapsulates the
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 ```
 
-```{r hpd_function}
+```{r hpd_function, echo=TRUE}
 #' Function to calculate the HPD credible set
 #'
 #' @param successes Number of successes (x)
@@ -66,28 +66,29 @@ calculate_hpd <- function(successes, failures, shape1, shape2, alpha) {
     # If the mode is near 0 or 1, adjust the starting point for search (mean-like fallback)
     mode <- posterior_shape1 / (posterior_shape1 + posterior_shape2)
   }
-  
+
   # Define the posterior probability density function (pdf)
   posterior_pdf <- function(p) {
     dbeta(p, posterior_shape1, posterior_shape2)
   }
-  
+
   # Find threshold t(alpha): the density level such that the area above it equals 1-alpha
   # Objective function: minimize (calculated probability - target probability)^2
-  objective_function <- function(t) {        
+  objective_function <- function(t) {
     # Define function f to solve dbeta(p) - t = 0
     f <- function(p) posterior_pdf(p) - t
-    
+
     # Find roots to the left and right of the mode
     left_p <- uniroot(f, interval = c(1e-5, mode))$root
     right_p <- uniroot(f, interval = c(mode, 1 - 1e-5))$root
-    
+
     # Compute probability between left_p and right_p
-    prob <- pbeta(right_p, posterior_shape1, posterior_shape2) - pbeta(left_p, posterior_shape1, posterior_shape2)
-    
+    prob <- pbeta(right_p, posterior_shape1, posterior_shape2) - 
+            pbeta(left_p, posterior_shape1, posterior_shape2)
+
     return((prob - (1 - alpha))^2)
   }
-  
+
   # Find t_alpha via optimization
   max_density <- posterior_pdf(mode)
   opt_result <- optimize(objective_function, interval = c(1e-5, max_density))
@@ -102,7 +103,7 @@ calculate_hpd <- function(successes, failures, shape1, shape2, alpha) {
   } else {
     left_endpoint <- uniroot(f_final, interval = c(1e-5, mode))$root
   }
-  
+
   # Right endpoint
   if (posterior_pdf(1) >= t_alpha) {
     right_endpoint <- 1
@@ -123,7 +124,7 @@ calculate_hpd <- function(successes, failures, shape1, shape2, alpha) {
 
 Using the function defined above with our specified prior and data, we obtain the posterior distribution and its 95% HPD interval.
 
-```{r pressure, echo=FALSE}
+```{r pressure, echo=TRUE}
 successes <- 1
 failures <- 9
 shape1 <- 1
@@ -142,13 +143,14 @@ right_endpoint <- hpd_result$right_endpoint
 posterior_shape1 <- shape1 + successes
 posterior_shape2 <- shape2 + failures
 
-curve(dbeta(x, posterior_shape1, posterior_shape2), 
-      from = 0, 
-      to = 1, 
-      lwd = 2, 
-      xlab = "Parameter p", 
-      ylab = "Density",
-      main = "Posterior Density Beta(2, 10) with 95% HPD Interval")
+curve(dbeta(x, posterior_shape1, posterior_shape2),
+  from = 0,
+  to = 1,
+  lwd = 2,
+  xlab = "Parameter p",
+  ylab = "Density",
+  main = "Posterior Density Beta(2, 10) with 95% HPD Interval"
+)
 grid()
 
 # Shade the HPD interval region
@@ -161,28 +163,34 @@ abline(h = t_alpha, col = "red", lty = "dashed", lwd = 1.5)
 abline(v = c(left_endpoint, right_endpoint), col = "blue", lty = "dashed", lwd = 1.5)
 
 # Add text labels for values
-text(x = 0.6, y = t_alpha + 0.3, 
-     labels = paste("t(α) =", round(t_alpha, 3)), 
-     col = "red", cex = 0.9)
-text(x = left_endpoint, y = 1.0, 
-     labels = paste("L =", round(left_endpoint, 3)), 
-     col = "blue", pos = 4, cex = 0.9)
-text(x = right_endpoint, y = 1.0, 
-     labels = paste("R =", round(right_endpoint, 3)), 
-     col = "blue", pos = 2, cex = 0.9)
+text(
+  x = 0.6, y = t_alpha + 0.3,
+  labels = paste("t(α) =", round(t_alpha, 3)),
+  col = "red", cex = 0.9
+)
+text(
+  x = left_endpoint, y = 1.0,
+  labels = paste("L =", round(left_endpoint, 3)),
+  col = "blue", pos = 4, cex = 0.9
+)
+text(
+  x = right_endpoint, y = 1.0,
+  labels = paste("R =", round(right_endpoint, 3)),
+  col = "blue", pos = 2, cex = 0.9
+)
 
 # Add legend
-legend("topright", 
-       legend = c("Posterior Density", "HPD Interval (95%)", "Threshold t(α)", "Endpoints"),
-       col = c("black", "lightgray", "red", "blue"),
-       lwd = c(2, 5, 1.5, 1.5),
-       lty = c("solid", "solid", "dashed", "dashed"),
-       bty = "n")
+legend("topright",
+  legend = c("Posterior Density", "HPD Interval (95%)", "Threshold t(α)", "Endpoints"),
+  col = c("black", "lightgray", "red", "blue"),
+  lwd = c(2, 5, 1.5, 1.5),
+  lty = c("solid", "solid", "dashed", "dashed"),
+  bty = "n"
+)
 
 # Print calculated values
 cat(sprintf("Threshold t(α):", t_alpha))
 cat(sprintf("95%% HPD interval: [%.4f, %.4f]\n", left_endpoint, right_endpoint))
-
 ```
 
 ### Analysis of the Plot
@@ -196,8 +204,6 @@ The plot above visualizes our findings. Here is a breakdown of what each compone
 * **Density Threshold (Red Dashed Line)**: The horizontal red line represents the density threshold **$t(\alpha) \approx 0.655$**, which defines the minimum density level that bounds the top 95% of the posterior probability mass. The HPD interval is constructed by including all values of $p$ for which the posterior density (the black curve) is *higher* than this line.
 
 * **Interval Endpoints (Blue Dashed Lines)**: The vertical blue lines mark the **left and right boundaries** of the HPD interval. These are the precise points where the posterior density curve intersects the red threshold line.
-
----
 
 ## 4. Conclusion
 
