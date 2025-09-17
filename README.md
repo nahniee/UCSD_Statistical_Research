@@ -1,1 +1,1 @@
-# UCSD_Statistical_Research
+# UCSD_Statistics_Research
