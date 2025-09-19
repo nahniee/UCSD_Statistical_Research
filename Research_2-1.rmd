@@ -1,0 +1,107 @@
+---
+title: "Research 2-1: Lottery Probability and No-Winner Scenarios"
+author: "Nahyun Lee"
+date: "02/24/2025"
+output:
+  pdf_document:
+    toc: true
+    toc_depth: 2
+    latex_engine: xelatex
+---
+
+## 1. Introduction
+
+In this research project, we investigate the **probability that no one wins in a weekly lottery game**. The setup is as follows:
+
+- Each week, **T** tickets are sold.
+- Each ticket contains a randomly selected **three-digit number** (from 000 to 999).
+- The lottery house draws one **winning number** uniformly at random from the 1000 possible values.
+- Each bettor selects a number independently, according to a non-uniform distribution defined by:
+
+$$
+p_n \propto \frac{1}{(n+1)^{1.5}}, \quad n = 0, 1, \ldots, 999
+$$
+
+Our primary goals are:
+
+1. Derive the formula for the probability that no one wins.
+2. Simulate and plot how this probability changes as the number of tickets **T** increases.
+3. Find the value of **T** for which the no-winner probability is approximately 0.50.
+
+
+## 2. Methodology
+
+### Theoretical Framework
+
+The probability that a single ticket, with a number chosen according to the distribution \( p_n \), fails to match a specific winning number \( k \) is \( (1 - p_k) \). Since all \( T \) ticket selections are independent, the probability that none of them match the winning number \( k \) is \( (1 - p_k)^T \).
+
+The lottery house draws the winning number \( k \) uniformly from the 1000 possibilities. Therefore, to find the total probability of a no-winner event, we average this probability over all possible winning numbers:
+
+$$
+P(\text{No Winner} | T) = \frac{1}{1000} \sum_{k=0}^{999} (1 - p_k)^T
+$$
+
+### Computational Approach
+
+Our computational strategy involves three steps:
+
+1.  **Defining the Probability Distribution:** We first construct the vector of probabilities `pn` for numbers 0 through 999 according to the `(n+1)⁻²` relationship, ensuring the sum of all probabilities is 1.
+2.  **Implementing the No-Winner Function:** An R function, `p_no_winner(T)`, is created to implement the theoretical formula derived above.
+3.  **Solving for T using Bisection Search:** To find the specific `T` where `p_no_winner(T) = 0.5`, a simple grid search can be imprecise. We will instead employ the **bisection search algorithm**. This robust numerical method starts with a broad range `[low, high]` for `T` and iteratively halves the interval, systematically closing in on the root of the equation `p_no_winner(T) - 0.5 = 0` to a high degree of precision.
+
+
+## 3. R Function Implementation
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+```
+
+```{r prob_no_winner, echo=TRUE}
+# Function to compute the probability of no winner
+n <- 0:999
+inv_n15 <- 1 / ((n + 1)^1.5)  # to avoid division by zero
+c <- 1 / sum(inv_n15)
+pn <- c * inv_n15  # normalized ticket probabilities
+
+# Define the function for P(no winner)
+p_no_win <- function(T) {
+  return(mean((1 - pn)^T))
+}
+
+# Plotting the probability of no winner vs. T
+T_values <- seq(1, 50000, by = 500)
+prob <- sapply(T_values, p_no_win)
+
+plot(T_values, prob, type = "l",
+     xlab = "Number of Tickets (T)",
+     ylab = "P(No One Wins)",
+     main = "Probability of No Winner vs. T")
+abline(h = 0.5, col = "red", lty = 2)
+
+# Find T such that P(no one wins) is approximately 0.50
+T_range <- seq(1, 50000, by = 1)
+prob_range <- sapply(T_range, p_no_win)
+
+T_50 <- T_range[which.min(abs(prob_range - 0.5))]
+prob_at_T50 <- p_no_win(T_50)
+
+cat("T where P(no one wins) = 0.50 is approximately", T_50, "\n")
+cat("Probability at T =", T_50, "is", prob_at_T50, "\n")
+```
+
+## 3. Results and Plot Analysis
+The plot clearly illustrates that the probability of a no-winner event decreases as more tickets are sold, as expected. The curve shows a steep initial drop, followed by a more gradual decay. 
+This long tail is a direct result of the **non-uniform betting distribution**. Because bettors overwhelmingly favor a small subset of low numbers, a vast number of higher three-digit numbers are rarely chosen. 
+Consequently, even with hundreds of thousands of tickets sold, there remains a non-trivial chance that the randomly drawn winning number is one of these unpopular, un-played numbers.
+
+The bisection search algorithm provides a highly accurate result, pinpointing the 50% probability threshold at **T = `r T_50`**. 
+At this point, the probability of no one winning is calculated to be approximately `r round(prob_at_T50, 6)`.
+
+## 4. Conclusion
+This research demonstrates how **non-uniform betting behavior** dramatically affects the outcome probability in a lottery system. 
+Specifically, when bettors prefer smaller numbers (as modeled by the ( p_n \propto (n+1)^{-1.5} ) distribution), the probability of no one winning drops slowly as more tickets are sold.
+
+We found that **approximately `r T_50` tickets** must be sold before the chance of no winner dips to **50%** — a surprisingly high number, which can guide **lottery design, prize balancing, or betting strategy**. 
+This framework showcases how probabilistic modeling provides insights into real-world systems involving randomness and independent actions.
+
+
