@@ -1,5 +1,5 @@
 ---
-title: "Research 2-2: A Risk Estimation Approach for Motorcycle Crash Test Data Using Regressograms and LOWESS"
+title: "Research 2-2: Model Selection for Non-Parametric Smoothers: A Risk Estimation Approach for Motorcycle Crash Data"
 author: "Nahyun Lee"
 date: "04/10/2025"
 output:
@@ -9,15 +9,11 @@ output:
     latex_engine: xelatex
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
-```
-
 ## Abstract
 
 In this study, we analyze motorcycle crash test data by estimating the acceleration response over time using various smoothing techniques. 
 Our goal is to understand patterns in acceleration throughout the crash event and identify local trends. 
-Three different non-parametric methods are employed: **Regressogram, Running Mean Smoother, and LOWESS (Locally Weighted Scatterplot Smoothing)**.
+Three different non-parametric methods are employed: **Regressogram and LOWESS (Locally Weighted Scatterplot Smoothing)**.
 
 ## 1. Introduction
 
@@ -44,7 +40,11 @@ Simply applying a smoother is insufficient; we must select the optimal tuning pa
 2.  **Bootstrap Optimism**: A computational method that uses bootstrap resampling to estimate how "overly optimistic" the training error is. The risk is estimated as: $\text{Risk} = \text{Apparent Error} + \text{Optimism}$.
 3.  **K-Fold Cross-Validation**: A widely-used resampling technique where the data is split into 7 "folds." The model is repeatedly trained on 6 folds and tested on the remaining one, providing a robust estimate of out-of-sample error.
 
-## 3. R Function Implementation
+## 3. Analysis and Results
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+```
 
 ### 3.1. Data Loading and Preparation
 
@@ -262,6 +262,8 @@ However, beyond a certain point (around \(k = 50\)), the risk levels off, indica
 The minimum risk is found at \(k = `r min_risk_k`\), marked by a red point and vertical line in the plot.  
 This value is selected as the optimal number of bins under the covariance penalty criterion.
 
+The clear minimum in the risk curve provides strong evidence that a moderately complex model (around \(k = 74\)) is optimal, successfully navigating the bias-variance tradeoff
+
 ### 3.5. Apply Efron Method (Produce Figure 6)
 We apply Efron’s bootstrap method to the motorcycle crash-test data using a regressogram with k = 25.
 This produces a plot similar to Figure 6 in Efron’s paper (The Estimation of Prediction Error: Covariance Penalties and Cross-Validation), which visualizes pointwise optimism contributions across bootstrap samples.
@@ -403,6 +405,8 @@ if (k_fig6 >= n) {
 The plot shows that optimism is generally low across most x-values, but increases sharply in regions with high variability or sparse data (e.g., near x > 0.7).
 This pattern illustrates how model instability contributes to increased prediction optimism in under-sampled regions.
 
+The optimal bin count is identified at k = 95. While numerically different from the covariance penalty result \(k = 74\), it confirms that the optimal model complexity lies in a similar region, rather than at the extremes.
+
 ---
 
 We refine the risk estimate for each number of bins \(k\) using **Efron's bootstrap optimism correction**.  
@@ -507,7 +511,7 @@ The figure shows that the bootstrap-corrected prediction risk initially decrease
 The optimal bin count is identified at \(k = 95\), where the minimum estimated risk under bootstrap optimism correction occurs.  
 This point is highlighted in blue with a dashed vertical line.
 
-**Note:** Although originally proposed for linear models, Efron's covariance penalty can be approximately extended to nonparametric models like the regressogram. Bootstrap-based estimation helps adapt the optimism correction in this context.
+**Note**: Although originally proposed for linear models, Efron's covariance penalty can be approximately extended to nonparametric models like the regressogram. Bootstrap-based estimation helps adapt the optimism correction in this context.
 
 ### 3.6. Apply 7-Fold Cross-Validation to Regressogram
 
@@ -653,10 +657,9 @@ if(any(!is.na(estimated_risks_cv))) {
 }
 ```
 
-The plot shows how the cross-validated prediction risk varies with the number of bins \(k\).
-
-Risk decreases as \(k\) increases, but eventually levels off, indicating diminishing returns from increasing model complexity.  
-The minimum estimated risk is found at \(k = 74\), highlighted in blue, which balances model flexibility and generalization performance.
+The plot shows how the cross-validated risk (estimated out-of-sample MSE) varies with the number of bins, \(k\). 
+The risk decreases as the model complexity increases from \(k = 5\), but it flattens and begins to rise slightly for very large \(k\), indicating overfitting. 
+The minimum estimated risk is found at \(k = 74\), highlighted in blue. This result is remarkably consistent with the estimate from the covariance penalty method, giving us strong confidence that this level of complexity provides the best generalization performance.
 
 ### 3.7. Plot Best-Fit Regressogram
 
@@ -711,6 +714,7 @@ This visualization confirms that the chosen bin count strikes a good balance bet
 leading to a flexible but not overly complex model fit.
 
 ### 3.8. Apply Efron Procedure to lowess() fits to the data
+
 In this section, we apply a cross-validation-based version of Efron’s procedure to LOWESS smoothing. We evaluate different values of the smoothing fraction \(f\), ranging from 0.005 to 0.500. For each \(f\), we compute the estimated prediction risk using 7-fold cross-validation.
 We then generate a plot of the estimated risk as a function of \(f\) and identify the value of \(f\) that minimizes the cross-validation error.
 A separate plot is also generated for \(f = 0.03\), following the structure of Figure 6 in Efron's original paper.
@@ -844,24 +848,19 @@ smaller \(f\) values produce highly flexible fits, while larger \(f\) values yie
 In this section, we apply 7-fold cross-validation to estimate the prediction risk for each \(f\) in the range [0.005, 0.5].  
 The mean squared error (MSE) averaged across folds is used as the evaluation metric.
 
-The left plot shows how risk changes with \(f\), and identifies \(f = 0.05\) as the value minimizing cross-validated MSE.  
-This value strikes a balance between overfitting and underfitting.
+The first plot shows the cross-validation risk as a function of the LOWESS span, \(f\). The curve reaches a clear minimum at \(f = 0.05\), indicating that this value provides the best balance between underfitting and overfitting.
 
-Additionally, the right panel presents a scatterplot of predicted versus observed values using a LOWESS fit with \(f = 0.03\),  
-chosen for visual clarity. The close alignment along the diagonal indicates strong predictive performance with low residual error.
+The second plot is a diagnostic visual for a LOWESS fit with \(f = 0.03\), comparing the model's predicted values against the actual observed values. The tight clustering of points along the red \(y = \hat{y}\) line demonstrates a strong predictive fit with low residual error.
 
 Overall, the LOWESS model demonstrates effective generalization and captures both local patterns and global structure.
 
 **Note**: Since the lowess() function in base R does not support prediction on new data, we use linear interpolation (approx()) on the fitted points to estimate predicted values. While not an exact predict method, this is standard practice for LOWESS-based CV.
 
-### 4. Conclusion
+## 4. Conclusion
 
 In this study, we explored the use of non-parametric smoothing techniques — **Regressogram, Running Mean, and LOWESS** — to model and estimate acceleration patterns in motorcycle crash test data. Our primary goal was to reconstruct the underlying structure of head acceleration over time, a task made difficult by the inherent noise and variability in crash datasets.
 
-To objectively select the optimal model complexity, we employed three risk estimation strategies:
-1. **Covariance Penalty (Cp)**: favored simplicity and revealed an optimal bin size of **k = 74**,
-2. **Bootstrap Optimism**: captured model instability via resampling and identified **k = 95** as optimal,
-3. **7-Fold Cross-Validation**: evaluated generalization performance and also supported **k = 74** as a strong candidate.
+To objectively select the optimal model complexity, we employed three risk estimation strategies. A key finding was the strong agreement between the Covariance Penalty and 7-Fold Cross-Validation, which both identified an optimal bin size of \(k = 74\). The computationally intensive Bootstrap Optimism method suggested a slightly more complex model with \(k = 95\), likely due to its sensitivity to model instability captured through resampling.
 
 These methods consistently showed that while increasing the number of bins improves fit initially, **overfitting quickly becomes a concern**, emphasizing the importance of formal risk estimation procedures.
 
