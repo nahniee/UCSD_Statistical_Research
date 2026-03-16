@@ -16,7 +16,7 @@ options(scipen = 999)
 
 ## 1. Introduction
 
-This report integrates the work from **Research 1-1**, **Research 1-2**, and **Research 1-3** into a single study of Bayesian inference for a Bernoulli success probability.
+This project investigates Bayesian inference for a Bernoulli success probability.
 
 The central object is the unknown success probability `p` in a Bernoulli trial.
 We begin with a `Beta(1,1)` prior, update it with observed successes and failures, and use the posterior distribution to construct **Highest Posterior Density (HPD)** intervals.
@@ -101,7 +101,7 @@ When the posterior is unimodal, this interval can be obtained by optimizing over
 
 ### 3.2 Sequential Stopping Rule
 
-The sequential rule is the same one studied in Research 1-2:
+We now extend the posterior interval calculation to a sequential Bernoulli experiment:
 
 - after each Bernoulli observation,
 - update the posterior `Beta(1+s,1+f)`,
@@ -365,7 +365,7 @@ The confidence interval inversion itself is carried out later in the results sec
 
 ### 5.1 Exact HPD Interval for a Simple Binomial Example
 
-We first apply the HPD calculation to a fixed-sample case from Research 1-1, using `1` success and `9` failures.
+We first apply the HPD calculation to a simple fixed-sample Bernoulli example, using `1` success and `9` failures.
 
 ```{r fixed_sample_hpd}
 simple_hpd <- beta_hpd_interval(a = 2, b = 10, cred_mass = 0.95)
@@ -587,7 +587,7 @@ It peaks near the observed boundary index and the zoomed view shows how the conf
 
 ## 6. Conclusion
 
-This integrated report shows that Research 1-1 through 1-3 form a single coherent study.
+This report develops one coherent line of analysis for Bernoulli inference.
 The fixed-sample HPD interval provides the basic Bayesian inference step, the HPD width defines a sequential stopping boundary, and the induced stopping distribution can then be inverted to obtain an exact confidence interval.
 
 The main numerical results are:
